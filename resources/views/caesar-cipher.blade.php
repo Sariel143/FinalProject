@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AES Cipher Tool</title>
+    <title>Caesar Cipher</title>
+    <link rel="shortcut icon" href="{{ asset('logo.png') }}" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
     <style>
         * {
             font-family: 'Poppins', sans-serif;
@@ -52,7 +51,7 @@
         /* Container */
         .container {
             max-width: 600px;
-            margin: 120px auto;
+            margin: 120px auto; /* Adjust for navbar */
             padding: 30px 20px;
             background-color: #222;
             border-radius: 15px;
@@ -66,13 +65,6 @@
             margin-bottom: 20px;
             font-weight: bold;
             text-transform: uppercase;
-        }
-
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            text-align: left;
         }
 
         input, select, textarea {
@@ -124,6 +116,7 @@
     </style>
 </head>
 <body>
+
     <!-- Navbar -->
     <div class="navbar">
         <a href="{{ route('index') }}">Home</a>
@@ -131,43 +124,43 @@
         <a href="{{ route('contact-us') }}">Contact</a>
     </div>
 
+    <!-- Main Content -->
     <div class="container">
-        <h1>AES Cipher Tool</h1>
-        <form method="POST" action="{{ url('/aes-tool') }}">
+        <h1>Caesar Cipher</h1>
+
+        <!-- Form -->
+        <form action="{{ route('caesar-cipher.process') }}" method="POST">
             @csrf
-            <label for="text">Input Text:</label>
-            <textarea id="text" name="text" rows="4" required>{{ old('text') }}</textarea>
+            <label for="textInput">Text</label>
+            <textarea name="textInput" id="textInput" rows="5">{{ old('textInput') }}</textarea>
 
-            <label for="key">Key (Max 16 Characters):</label>
-            <input type="text" id="key" name="key" maxlength="16" required>
+            <label for="shiftInput">Shift</label>
+            <input type="number" name="shiftInput" value="{{ old('shiftInput') }}" required>
 
-            <label for="mode">Mode:</label>
-            <select id="mode" name="mode">
-                <option value="encrypt" {{ old('mode') === 'encrypt' ? 'selected' : '' }}>Encrypt</option>
-                <option value="decrypt" {{ old('mode') === 'decrypt' ? 'selected' : '' }}>Decrypt</option>
+            <label for="action">Action</label>
+            <select name="action" id="action" required>
+                <option value="encrypt" {{ old('action') === 'encrypt' ? 'selected' : '' }}>Encrypt</option>
+                <option value="decrypt" {{ old('action') === 'decrypt' ? 'selected' : '' }}>Decrypt</option>
             </select>
 
             <button type="submit">Submit</button>
         </form>
 
-        @if(session('error'))
-            <div class="error">
-                <script>
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Oops!',
-                        text: "{{ session('error') }}"
-                    });
-                </script>
-            </div>
-        @endif
-
-        @if(session('output'))
+        <!-- Result -->
+        @if(isset($result))
             <div class="result">
-                <h2>Solution and Result:</h2>
-                <pre>{{ session('output') }}</pre>
+                <h2><strong>Caesar Cipher Result</strong></h2>
+                <p><strong>Action:</strong> {{ ucfirst($action) }}</p>
+                <p><strong>Original Text:</strong> {{ $textInput }}</p>
+                <p><strong>Shift:</strong> {{ $shiftInput }}</p>
+                <p><strong>Result:</strong> {{ $result }}</p>
+            </div>
+        @elseif ($errors->any())
+            <div class="error">
+                <p><strong>Error:</strong> Please fill out all fields correctly.</p>
             </div>
         @endif
     </div>
+
 </body>
 </html>

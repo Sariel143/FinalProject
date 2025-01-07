@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AES Cipher Tool</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+    <title>Columnar Cipher</title>
     <style>
         * {
             font-family: 'Poppins', sans-serif;
@@ -132,42 +129,74 @@
     </div>
 
     <div class="container">
-        <h1>AES Cipher Tool</h1>
-        <form method="POST" action="{{ url('/aes-tool') }}">
+        <h1>Double Columnar Cipher Tool</h1>
+        <form id="cipherForm">
             @csrf
-            <label for="text">Input Text:</label>
-            <textarea id="text" name="text" rows="4" required>{{ old('text') }}</textarea>
+            <label for="text">Text</label>
+            <input type="text" id="text" name="text" placeholder="Enter your text..." required>
 
-            <label for="key">Key (Max 16 Characters):</label>
-            <input type="text" id="key" name="key" maxlength="16" required>
+            <label for="key1">Key 1</label>
+            <input type="text" id="key1" name="key1" placeholder="Enter first key..." required>
 
-            <label for="mode">Mode:</label>
-            <select id="mode" name="mode">
-                <option value="encrypt" {{ old('mode') === 'encrypt' ? 'selected' : '' }}>Encrypt</option>
-                <option value="decrypt" {{ old('mode') === 'decrypt' ? 'selected' : '' }}>Decrypt</option>
+            <label for="key2">Key 2</label>
+            <input type="text" id="key2" name="key2" placeholder="Enter second key..." required>
+
+            <label for="action">Action</label>
+            <select id="action" name="action" required>
+                <option value="encrypt">Encrypt</option>
+                <option value="decrypt">Decrypt</option>
             </select>
 
             <button type="submit">Submit</button>
         </form>
 
-        @if(session('error'))
-            <div class="error">
-                <script>
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Oops!',
-                        text: "{{ session('error') }}"
-                    });
-                </script>
-            </div>
-        @endif
+        <div class="result" id="result">
+            <h2>Result</h2>
+            <p id="output">Your result will appear here...</p>
+        </div>
 
-        @if(session('output'))
-            <div class="result">
-                <h2>Solution and Result:</h2>
-                <pre>{{ session('output') }}</pre>
-            </div>
-        @endif
+        <div class="error" id="error"></div>
     </div>
+
+    <script>
+        document.getElementById('cipherForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const text = document.getElementById('text').value;
+            const key1 = document.getElementById('key1').value;
+            const key2 = document.getElementById('key2').value;
+            const action = document.getElementById('action').value;
+
+            if (!text || !key1 || !key2) {
+                document.getElementById('error').innerText = 'All fields are required.';
+                return;
+            }
+
+            document.getElementById('error').innerText = '';
+
+            const formData = new FormData();
+            formData.append('text', text);
+            formData.append('key1', key1);
+            formData.append('key2', key2);
+            formData.append('action', action);
+
+            // Ensure you use the correct route for your form submission
+            fetch("{{ route('double-tool.process') }}", {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('error').innerText = data.error;
+                } else {
+                    document.getElementById('output').innerText = data.result;  // Display the result here
+                }
+            })
+            .catch(error => {
+                document.getElementById('error').innerText = 'An error occurred. Please try again later.';
+            });
+        });
+    </script>
 </body>
 </html>

@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AES Cipher Tool</title>
+    <title>Playfair Cipher</title>
+    <link rel="shortcut icon" href="{{ asset('logo.png') }}" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
     <style>
         * {
             font-family: 'Poppins', sans-serif;
@@ -124,6 +123,7 @@
     </style>
 </head>
 <body>
+
     <!-- Navbar -->
     <div class="navbar">
         <a href="{{ route('index') }}">Home</a>
@@ -131,43 +131,57 @@
         <a href="{{ route('contact-us') }}">Contact</a>
     </div>
 
+    <!-- Main Content -->
     <div class="container">
-        <h1>AES Cipher Tool</h1>
-        <form method="POST" action="{{ url('/aes-tool') }}">
-            @csrf
-            <label for="text">Input Text:</label>
-            <textarea id="text" name="text" rows="4" required>{{ old('text') }}</textarea>
+        <h1>Playfair Cipher</h1>
 
-            <label for="key">Key (Max 16 Characters):</label>
-            <input type="text" id="key" name="key" maxlength="16" required>
+        <form id="cipherForm">
+            <label for="text">Text:</label>
+            <input type="text" id="text" name="text" required>
 
-            <label for="mode">Mode:</label>
-            <select id="mode" name="mode">
-                <option value="encrypt" {{ old('mode') === 'encrypt' ? 'selected' : '' }}>Encrypt</option>
-                <option value="decrypt" {{ old('mode') === 'decrypt' ? 'selected' : '' }}>Decrypt</option>
+            <label for="key">Key:</label>
+            <input type="text" id="key" name="key" required>
+
+            <label for="action">Action:</label>
+            <select id="action" name="action">
+                <option value="encrypt">Encrypt</option>
+                <option value="decrypt">Decrypt</option>
             </select>
 
             <button type="submit">Submit</button>
         </form>
 
-        @if(session('error'))
-            <div class="error">
-                <script>
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Oops!',
-                        text: "{{ session('error') }}"
-                    });
-                </script>
-            </div>
-        @endif
-
-        @if(session('output'))
-            <div class="result">
-                <h2>Solution and Result:</h2>
-                <pre>{{ session('output') }}</pre>
-            </div>
-        @endif
+        <div id="result"></div>
     </div>
+
+    <!-- Axios CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script>
+        document.getElementById('cipherForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const text = document.getElementById('text').value;
+            const key = document.getElementById('key').value;
+            const action = document.getElementById('action').value;
+
+            try {
+                const response = await axios.post('/cipher', { text, key, action });
+                document.getElementById('result').innerHTML = `
+                    <div class="result">
+                        <h2>Result</h2>
+                        <p><strong>${action === 'encrypt' ? 'Encrypted' : 'Decrypted'} Text:</strong> ${response.data.result}</p>
+                    </div>
+                `;
+            } catch (error) {
+                const errorMessage = error.response?.data?.error || 'An unexpected error occurred.';
+                document.getElementById('result').innerHTML = `
+                    <div class="error">
+                        <p><strong>Error:</strong> ${errorMessage}</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
 </body>
 </html>

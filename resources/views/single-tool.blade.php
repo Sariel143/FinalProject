@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AES Cipher Tool</title>
+    <title>Playfair Cipher</title>
+    <link rel="shortcut icon" href="{{ asset('logo.png') }}" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
     <style>
         * {
             font-family: 'Poppins', sans-serif;
@@ -124,50 +123,62 @@
     </style>
 </head>
 <body>
+
     <!-- Navbar -->
     <div class="navbar">
         <a href="{{ route('index') }}">Home</a>
         <a href="{{ route('about-us') }}">About Us</a>
         <a href="{{ route('contact-us') }}">Contact</a>
     </div>
-
-    <div class="container">
-        <h1>AES Cipher Tool</h1>
-        <form method="POST" action="{{ url('/aes-tool') }}">
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Single Columnar Cipher</h1>
+        <form id="cipherForm" method="POST" action="{{ route('single-tool.process') }}">
             @csrf
-            <label for="text">Input Text:</label>
-            <textarea id="text" name="text" rows="4" required>{{ old('text') }}</textarea>
-
-            <label for="key">Key (Max 16 Characters):</label>
-            <input type="text" id="key" name="key" maxlength="16" required>
-
-            <label for="mode">Mode:</label>
-            <select id="mode" name="mode">
-                <option value="encrypt" {{ old('mode') === 'encrypt' ? 'selected' : '' }}>Encrypt</option>
-                <option value="decrypt" {{ old('mode') === 'decrypt' ? 'selected' : '' }}>Decrypt</option>
-            </select>
-
-            <button type="submit">Submit</button>
+            <div class="mb-3">
+                <label for="text" class="form-label">Text</label>
+                <input type="text" class="form-control" id="text" name="text" required>
+            </div>
+            <div class="mb-3">
+                <label for="key" class="form-label">Key</label>
+                <input type="text" class="form-control" id="key" name="key" required>
+            </div>
+            <div class="mb-3">
+                <label for="action" class="form-label">Action</label>
+                <select class="form-select" id="action" name="action" required>
+                    <option value="encrypt">Encrypt</option>
+                    <option value="decrypt">Decrypt</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Process</button>
         </form>
 
-        @if(session('error'))
-            <div class="error">
-                <script>
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Oops!',
-                        text: "{{ session('error') }}"
-                    });
-                </script>
-            </div>
-        @endif
-
-        @if(session('output'))
-            <div class="result">
-                <h2>Solution and Result:</h2>
-                <pre>{{ session('output') }}</pre>
-            </div>
-        @endif
+        <div class="mt-4" id="result" style="display: none;">
+            <h3>Result:</h3>
+            <pre id="cipherOutput"></pre>
+        </div>
     </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#cipherForm').on('submit', function (e) {
+                e.preventDefault();
+                const formData = $(this).serialize();
+
+                $.ajax({
+                url: "{{ route('single-tool.process') }}",
+                method: "POST",
+                data: formData,
+                success: function (response) {
+                    $('#cipherOutput').text(JSON.stringify(response, null, 2));
+                    $('#result').show();
+                },
+                error: function (error) {
+                    alert('An error occurred. Please check your inputs.');
+                }
+            });
+            });
+        });
+    </script>
 </body>
 </html>
