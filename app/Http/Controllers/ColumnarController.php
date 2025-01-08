@@ -6,107 +6,109 @@ use Illuminate\Http\Request;
 
 class ColumnarController extends Controller
 {
-    // Function to create the grid
-    private function createGrid($text, $keyLength)
+    // Encryption process with two keys
+    private function encryptWithColumnar($text, $key)
     {
-        $gridHeight = ceil(strlen($text) / $keyLength);
-        $grid = array_fill(0, $gridHeight, array_fill(0, $keyLength, '_'));
+        $columns = strlen($key);
+        $rows = ceil(strlen($text) / $columns);
+        $grid = array_fill(0, $rows, array_fill(0, $columns, '_'));
 
+        // Fill the grid row by row
         $index = 0;
-        for ($r = 0; $r < $gridHeight; $r++) {
-            for ($c = 0; $c < $keyLength; $c++) {
-                if ($index < strlen($text)) {
-                    $grid[$r][$c] = $text[$index++];
-                }
+        for ($i = 0; $i < $rows; $i++) {
+            for ($j = 0; $j < $columns; $j++) {
+                $grid[$i][$j] = $index < strlen($text) ? $text[$index++] : '_';
             }
         }
-        return $grid;
-    }
 
-    // Encrypt function
-    private function encryptWithColumnar($text, $key, &$grid)
-    {
-        $keyLength = strlen($key);
-        $grid = $this->createGrid($text, $keyLength);
+        // Create an array of key positions sorted by key order
+        $sortedKey = str_split($key);
+        $keyPositions = array_keys($sortedKey);
+        asort($sortedKey);
+        $sortedPositions = array_keys($sortedKey);
 
-        $keyOrder = [];
-        foreach (str_split($key) as $idx => $char) {
-            $keyOrder[] = ['char' => $char, 'idx' => $idx];
-        }
-        usort($keyOrder, function ($a, $b) {
-            return strcmp($a['char'], $b['char']);
-        });
-
+        // Read columns by sorted key order
         $result = '';
-        foreach ($keyOrder as $keyCol) {
-            $colIdx = $keyCol['idx'];
-            foreach ($grid as $row) {
-                $result .= $row[$colIdx];
+        foreach ($sortedPositions as $col) {
+            for ($i = 0; $i < $rows; $i++) {
+                $result .= $grid[$i][$col];
             }
         }
+
         return $result;
     }
 
-    // Decrypt function
-    private function decryptWithColumnar($ciphertext, $key, &$grid)
+    // Decryption process with two keys
+    private function decryptWithColumnar($text, $key)
     {
-        $keyLength = strlen($key);
-        $gridHeight = ceil(strlen($ciphertext) / $keyLength);
+        $columns = strlen($key);
+        $rows = ceil(strlen($text) / $columns);
+        $grid = array_fill(0, $rows, array_fill(0, $columns, '_'));
 
-        $keyOrder = [];
-        foreach (str_split($key) as $idx => $char) {
-            $keyOrder[] = ['char' => $char, 'idx' => $idx];
-        }
-        usort($keyOrder, function ($a, $b) {
-            return strcmp($a['char'], $b['char']);
-        });
+        // Create an array of key positions sorted by key order
+        $sortedKey = str_split($key);
+        $keyPositions = array_keys($sortedKey);
+        asort($sortedKey);
+        $sortedPositions = array_keys($sortedKey);
 
-        $grid = array_fill(0, $gridHeight, array_fill(0, $keyLength, '_'));
-
-        $columnLength = strlen($ciphertext) / $keyLength;
+        // Fill grid by columns in sorted order
         $index = 0;
-        foreach ($keyOrder as $keyCol) {
-            $colIdx = $keyCol['idx'];
-            for ($r = 0; $r < $gridHeight; $r++) {
-                $grid[$r][$colIdx] = $ciphertext[$index++];
+        foreach ($sortedPositions as $col) {
+            for ($i = 0; $i < $rows; $i++) {
+                $grid[$i][$col] = $index < strlen($text) ? $text[$index++] : '_';
             }
         }
 
-        $plaintext = '';
-        foreach ($grid as $row) {
-            $plaintext .= implode('', $row);
+        // Read rows to decrypt
+        $result = '';
+        for ($i = 0; $i < $rows; $i++) {
+            for ($j = 0; $j < $columns; $j++) {
+                $result .= $grid[$i][$j];
+            }
         }
 
-        return rtrim($plaintext, '_');
+        return rtrim($result, '_');  // Strip trailing padding
     }
 
     public function process(Request $request)
     {
-        // Get inputs
-        $action = $request->input('action');
-        $text = str_replace(' ', '_', $request->input('text'));
-        $key1 = $request->input('key1');
-        $key2 = $request->input('key2');
-
         // Validate inputs
-        if (!$action || !$text || !$key1 || !$key2) {
-            return response()->json(['error' => 'Invalid input.'], 400);
+        $validated = $request->validate([
+            'action' => 'required|in:encrypt,decrypt',
+            'text' => 'required|string',
+            'key1' => 'required|string',
+            'key2' => 'required|string',
+        ]);
+
+        $action = $validated['action'];
+        $text = str_replace(' ', '_', strtoupper($validated['text'])); // Replace spaces and capitalize
+        $key1 = strtoupper($validated['key1']);
+        $key2 = strtoupper($validated['key2']);
+
+        // Initialize results
+        $result1 = '';
+        $result2 = '';
+
+        // Encryption or decryption process
+        if ($action === 'encrypt') {
+            // Encrypt with key1
+            $result1 = $this->encryptWithColumnar($text, $key1);
+            // Encrypt the result1 with key2
+            $result2 = $this->encryptWithColumnar($result1, $key2);
+        } elseif ($action === 'decrypt') {
+            // Decrypt with key2 (reverse the second encryption)
+            $result1 = $this->decryptWithColumnar($text, $key2);
+            // Decrypt the result1 with key1 (reverse the first encryption)
+            $result2 = $this->decryptWithColumnar($result1, $key1);
         }
 
-        // Initialize grid and result
-        $grid = [];
-        $result = '';
-
-        // Check action and proceed with appropriate method
-        if ($action == 'encrypt') {
-            $result = $this->encryptWithColumnar($text, $key1, $grid);
-        } elseif ($action == 'decrypt') {
-            $result = $this->decryptWithColumnar($text, $key2, $grid);
-        } else {
-            return response()->json(['error' => 'Invalid action. Please use "encrypt" or "decrypt".'], 400);
-        }
-
-        // Return the result
-        return response()->json(['result' => $result]);
+        // Return the results
+        return response()->json([
+            'result1' => $result1,
+            'result2' => $result2,
+            'action' => $action,
+            'key1' => $key1,
+            'key2' => $key2,
+        ]);
     }
 }

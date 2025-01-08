@@ -20,7 +20,6 @@
             font-size: 14px;
         }
 
-        /* Navbar */
         .navbar {
             width: 100%;
             background-color: #222;
@@ -48,7 +47,6 @@
             color: #222;
         }
 
-        /* Container */
         .container {
             max-width: 600px;
             margin: 120px auto;
@@ -64,7 +62,6 @@
             color: #fff;
             margin-bottom: 20px;
             font-weight: bold;
-            text-transform: uppercase;
         }
 
         label {
@@ -124,49 +121,52 @@
 </head>
 <body>
 
-    <!-- Navbar -->
     <div class="navbar">
         <a href="{{ route('index') }}">Home</a>
         <a href="{{ route('about-us') }}">About Us</a>
         <a href="{{ route('contact-us') }}">Contact</a>
     </div>
 
-    <!-- Main Content -->
     <div class="container">
         <h1>Playfair Cipher</h1>
 
-        <form id="cipherForm">
-            <label for="text">Text:</label>
-            <input type="text" id="text" name="text" required>
+        <form id="cipherForm" method="POST" action="{{ route('playfair-tool.process') }}">
+        @csrf
+        <label for="text">Text:</label>
+        <input type="text" id="text" name="text" required>
 
-            <label for="key">Key:</label>
-            <input type="text" id="key" name="key" required>
+        <label for="key">Key:</label>
+        <input type="text" id="key" name="key" required>
 
-            <label for="action">Action:</label>
-            <select id="action" name="action">
-                <option value="encrypt">Encrypt</option>
-                <option value="decrypt">Decrypt</option>
-            </select>
+        <label for="action">Action:</label>
+        <select id="action" name="action">
+            <option value="encrypt">Encrypt</option>
+            <option value="decrypt">Decrypt</option>
+        </select>
 
-            <button type="submit">Submit</button>
-        </form>
+        <button type="submit">Submit</button>
+    </form>
 
-        <div id="result"></div>
-    </div>
+    <div id="result"></div>
 
-    <!-- Axios CDN -->
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
     <script>
-        document.getElementById('cipherForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
+        const form = document.getElementById('cipherForm');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
             const text = document.getElementById('text').value;
             const key = document.getElementById('key').value;
             const action = document.getElementById('action').value;
 
             try {
-                const response = await axios.post('/cipher', { text, key, action });
+                const response = await axios.post('{{ route("playfair-tool.process") }}', {
+                    text,
+                    key,
+                    action
+                });
+
                 document.getElementById('result').innerHTML = `
                     <div class="result">
                         <h2>Result</h2>

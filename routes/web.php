@@ -1,5 +1,5 @@
 <?php
-use App\Http\Controllers\SingleToolController;
+use App\Http\Controllers\SingleController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CipherController;
@@ -11,7 +11,7 @@ use App\Http\Controllers\ColumnarController;
 
 Route::get('/', function () {
     return view('index');
-});
+})->name('index'); // Explicitly naming the route 'index'
 
 Route::get('/aes-tool', [CipherController::class, 'index'])->name('aes-tool');
 Route::post('/aes-tool', [CipherController::class, 'process']);
@@ -26,19 +26,17 @@ Route::get('/playfair-tool', function () {
     return view('playfair-tool');
 })->name('playfair-tool.form');
 
+Route::post('/playfair-tool', [PlayfairCipherController::class, 'process'])->name('playfair-tool.process');
+
 Route::get('/about-us', function () {
     return view('about-us');
 })->name('about-us');
-
-Route::get('/index', function () {
-    return view('index');
-})->name('index');
 
 Route::get('/single-tool', function () {
     return view('single-tool');
 })->name('single-tool.form');
 
-Route::post('/single-tool/process', [SingleToolController::class, 'process'])->name('single-tool.process');
+Route::post('/single-tool/process', [SingleController::class, 'process'])->name('single-tool.process');
 
 Route::get('/vigenere-cipher', function () {
     return view('vigenere-cipher');

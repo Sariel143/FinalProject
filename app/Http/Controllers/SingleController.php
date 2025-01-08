@@ -4,86 +4,85 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-class SingleToolController extends Controller
+class SingleController extends Controller
 {
-    private function replaceSpacesWithUnderscore($text)
-    {
-        return str_replace(' ', '_', $text);
-    }
-
-    private function singleColumnarCipher($text, $key, $action)
-    {
-        $text = $this->replaceSpacesWithUnderscore($text);
-        $keyLength = strlen($key);
-        $gridHeight = ceil(strlen($text) / $keyLength);
-        $grid = array_fill(0, $gridHeight, array_fill(0, $keyLength, ''));
-
-        if ($action === 'encrypt') {
-            $index = 0;
-            for ($r = 0; $r < $gridHeight; $r++) {
-                for ($c = 0; $c < $keyLength; $c++) {
-                    $grid[$r][$c] = $index < strlen($text) ? $text[$index++] : '_';
-                }
-            }
-
-            $sortedKey = str_split($key);
-            asort($sortedKey);
-            $sortedKey = array_values($sortedKey);
-
-            $result = '';
-            foreach ($sortedKey as $char) {
-                $colIndex = strpos($key, $char);
-                for ($r = 0; $r < $gridHeight; $r++) {
-                    $result .= $grid[$r][$colIndex];
-                }
-            }
-
-            return [
-                'result' => $result,
-                'grid' => $grid
-            ];
-        } elseif ($action === 'decrypt') {
-            $sortedKey = str_split($key);
-            asort($sortedKey);
-            $sortedKey = array_values($sortedKey);
-
-            $cipherText = $text;
-            $index = 0;
-            foreach ($sortedKey as $char) {
-                $colIndex = strpos($key, $char);
-                for ($r = 0; $r < $gridHeight; $r++) {
-                    $grid[$r][$colIndex] = $index < strlen($cipherText) ? $cipherText[$index++] : '_';
-                }
-            }
-
-            $result = '';
-            for ($r = 0; $r < $gridHeight; $r++) {
-                for ($c = 0; $c < $keyLength; $c++) {
-                    $result .= $grid[$r][$c];
-                }
-            }
-
-            return [
-                'result' => str_replace('_', ' ', $result),
-                'grid' => $grid
-            ];
-        }
-    }
-
     public function process(Request $request)
     {
-        $request->validate([
-            'text' => 'required|string',
-            'key' => 'required|string',
-            'action' => 'required|in:encrypt,decrypt',
-        ]);
+        $plaintext = strtoupper($request->input('text')); // Ensure the input text is in uppercase
+        $key = strtoupper($request->input('key')); // Ensure the key is in uppercase
+        $action = $request->input('action'); // 'encrypt' or 'decrypt'
 
-        $text = $request->input('text');
-        $key = $request->input('key');
-        $action = $request->input('action');
+        // Remove spaces from plaintext and key
+        $plaintext = str_replace(' ', '', $plaintext);
+        $key = str_replace(' ', '', $key);
 
-        $cipherOutput = $this->singleColumnarCipher($text, $key, $action);
+        // Determine the number of columns based on the length of the key
+        $numColumns = strlen($key);
+        $numRows = ceil(strlen($plaintext) / $numColumns); // Calculate the required number of rows
 
-        return response()->json($cipherOutput);
+        // Pad the plaintext if necessary
+        $paddingLength = $numRows * $numColumns - strlen($plaintext);
+        if ($paddingLength > 0) {
+            $plaintext .= str_repeat('_', $paddingLength); // Padding character
+        }
+
+        // Create the grid
+        $grid = [];
+        $index = 0;
+        for ($row = 0; $row < $numRows; $row++) {
+            for ($col = 0; $col < $numColumns; $col++) {
+                $grid[$row][$col] = $plaintext[$index++];
+            }
+        }
+
+        // Assign numbers to the key letters
+        $keyOrder = $this->getKeyOrder($key);
+
+        // Handle encryption and decryption actions
+        if ($action === 'encrypt') {
+            // Encrypt: Read the ciphertext based on the key order
+            $ciphertext = '';
+            foreach ($keyOrder as $columnIndex) {
+                for ($row = 0; $row < $numRows; $row++) {
+                    $ciphertext .= $grid[$row][$columnIndex];
+                }
+            }
+        } elseif ($action === 'decrypt') {
+            // Decrypt: Reverse the encryption process
+            $grid = [];
+            $ciphertextIndex = 0;
+
+            // Fill the grid with ciphertext
+            foreach ($keyOrder as $columnIndex) {
+                for ($row = 0; $row < $numRows; $row++) {
+                    $grid[$row][$columnIndex] = $plaintext[$ciphertextIndex++];
+                }
+            }
+
+            // Reconstruct the plaintext from the grid
+            $plaintext = '';
+            for ($row = 0; $row < $numRows; $row++) {
+                for ($col = 0; $col < $numColumns; $col++) {
+                    $plaintext .= $grid[$row][$col];
+                }
+            }
+
+            // Remove padding and return the result
+            $ciphertext = rtrim($plaintext, '_');
+        }
+
+        // Return the result
+        return view('single-tool', compact('ciphertext', 'action', 'key'));
+    }
+
+    private function getKeyOrder($key)
+    {
+        $keyArray = str_split($key);
+        asort($keyArray);
+        $keyOrder = [];
+        foreach ($keyArray as $index => $value) {
+            $keyOrder[] = array_search($value, $keyArray);
+        }
+        return $keyOrder;
     }
 }

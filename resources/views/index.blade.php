@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Team Belandres</title>
-    <link rel="shortcut icon" href="{{ asset('logo.png') }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ asset('images/logo.png') }}" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         * {
@@ -51,8 +51,8 @@
         .container {
             text-align: center;
             border-radius: 20px;
-            margin-top: 120px;
-            margin-left: 380px;
+            margin-top: 70px;
+            margin-left: 300px;
             padding: 50px 30px;
             max-width: 650px;
             width: 90%;
@@ -130,7 +130,7 @@
     </div>
 
     <div class="container">
-        <h1>Code Schemes</h1>
+        <h1>Secret Messaging Techniques</h1>
         
         <div class="button-container">
             <a href="{{ route('caesar-cipher.form') }}">
