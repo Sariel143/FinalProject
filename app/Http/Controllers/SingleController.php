@@ -77,12 +77,17 @@ class SingleController extends Controller
 
     private function getKeyOrder($key)
     {
+        // Split the key into an array and maintain original indices
         $keyArray = str_split($key);
-        asort($keyArray);
-        $keyOrder = [];
-        foreach ($keyArray as $index => $value) {
-            $keyOrder[] = array_search($value, $keyArray);
-        }
+        $indexedKey = array_map(null, $keyArray, array_keys($keyArray));
+
+        // Sort by the key characters, maintaining original indices
+        usort($indexedKey, function ($a, $b) {
+            return $a[0] <=> $b[0]; // Compare characters
+        });
+
+        // Extract sorted indices
+        $keyOrder = array_map(fn($item) => $item[1], $indexedKey);
         return $keyOrder;
     }
 }
